@@ -47,6 +47,7 @@ Le conteneur passe immédiatement au statut *Exited* une fois la commande `echo`
 docker run -it alpine sh
 ```
 ![alpine](Picture5.png)
+
 **Observation :**
 Les commandes `ls` et `uname -a` exécutées dans le conteneur montrent qu'il possède son propre système de fichiers, isolé de l'hôte. Cependant, il partage le noyau Linux de l'hôte (ou de la machine virtuelle WSL2 sous Windows), ce qui confirme que Docker utilise une virtualisation légère au niveau de l'OS.
 
