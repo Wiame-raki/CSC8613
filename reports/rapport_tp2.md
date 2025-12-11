@@ -11,7 +11,9 @@
 ## Question 2.a : 
 
 Le schéma a été créé .
+## Question 2.b:
 
+Le fichier `.env` permet d'externaliser les variables de configuration (comme les identifiants de base de données) afin qu'elles ne soient pas écrites en dur dans le code, facilitant ainsi la sécurité et la portabilité entre différents environnements.
 ## Question 2.c:
 
 ![simple](tp2.4.png)
@@ -31,7 +33,7 @@ Le schéma a été créé .
 
 ## Question3.a : Rôle du conteneur Prefect
 
-Le conteneur Prefect sert de moteur d'orchestration du pipeline d’ingestion : il planifie, exécute et surveille les flux d’ingestion de données, assurant leur automatisation et leur fiabilité au sein de l’architecture. Il gére aussi les logs, les erreurs , les états et les indépendances.
+Le conteneur Prefect agit comme chef d'orchestre. Il planifie les flux, gère les reprises sur erreur (retries), centralise les logs et s'assure que les tâches respectent leurs dépendances (par exemple : ne pas lancer la validation si l'ingestion a échoué).
 
 ## Question 3.b: Logique de la fonction upsert_csv
 
@@ -57,6 +59,8 @@ Si une expectation échoue, la fonction lève une exception, ce qui fait échoue
 
 ![simple](tp2.7.png)
 
+
+## Question 4.c:
 ## Validation des données
 
 Pour la table `usage_agg_30d`, j'ai défini les expectations suivantes :
@@ -74,18 +78,20 @@ gdf.expect_column_values_to_be_between("avg_session_mins_7d", min_value=0)
 * **watch_hours_30d >= 0** : un utilisateur ne peut pas avoir regardé un nombre d’heures négatif.
 * **avg_session_mins_7d >= 0** : la durée moyenne d’une session ne peut pas être négative.
 
-Ces bornes permettent de protéger le modèle en excluant des valeurs impossibles ou aberrantes. Elles servent également à détecter des fichiers d’export corrompus ou des erreurs d’ingestion, garantissant que seules des données cohérentes et fiables sont utilisées pour l’entraînement et l’évaluation du modèle de churn.
+Ces bornes (>= 0) sont critiques pour le Machine Learning. Si un modèle recevait des valeurs négatives pour une durée (ce qui est physiquement impossible), cela introduirait du bruit (noise) qui fausserait l'apprentissage. De plus, lors de la phase de feature engineering (ex: normalisation ou passage au log), des valeurs négatives pourraient provoquer des erreurs de calcul (ex: log d'un nombre négatif) et faire planter le pipeline d'entraînement.
 
 ## Question 5.b:
 
 ![simple](tp2.8.png)
 
 
-**Commentaire** :
-Pour le snapshot du 31 janvier 2024, nous avons bien **7043 lignes**, ce qui correspond exactement au nombre de clients présents après `month_000`.
-Pour le snapshot du 29 février 2024, nous avons **0 ligne** car aucune ingestion de données n’a encore été effectuée pour le mois de février.
-Autrement dit, le snapshot ne crée pas automatiquement de nouvelles lignes pour des mois futurs ; il ne contient que les données effectivement ingérées à la date `as_of` spécifiée. Cela permet de conserver un historique fidèle et idempotent des métriques par mois.
+**Commentaire :**
 
+Nous observons que le nombre de lignes est strictement identique (**7043**) pour les deux dates de snapshot:
+
+1.  **Stratégie d'Upsert :** Notre pipeline utilise une logique `INSERT ... ON CONFLICT DO UPDATE`. Lors de l'ingestion du mois 001, le système a détecté que les `user_id` existaient déjà dans la base. Il a donc **mis à jour** les données existantes dans les tables principales au lieu de créer de nouvelles lignes.
+2.  **Cohorte Fixe :** Le jeu de données suit une cohorte fixe d'utilisateurs. Même si un client a "churné" (résilié) en février, sa ligne est conservée pour l'historique et mise à jour. Aucun nouvel utilisateur n'est apparu et aucun n'a été supprimé.
+3.  **Mécanisme du Snapshot :** La fonction `snapshot_month` a capturé l'état des tables principales à deux moments différents. Le snapshot du 29 février contient donc les mêmes 7043 utilisateurs que celui de janvier, mais avec leurs caractéristiques (consommation, facturation) mises à jour pour le mois de février.
 ## Synthèse du TP2
 
 ### Schéma du pipeline d’ingestion (ASCII)
@@ -104,7 +110,7 @@ CSV month_000 --> Prefect flow --> Upsert dans tables principales
 
 * Nous ne travaillons pas directement sur les tables live pour entraîner un modèle afin de préserver l’intégrité et la stabilité des données. Les tables live peuvent évoluer et contenir des mises à jour partielles ou des erreurs temporaires.
 * Les snapshots sont importants pour éviter la data leakage et pour garantir la reproductibilité temporelle : chaque snapshot capture l’état exact des métriques d’un mois donné, permettant de reconstruire exactement l’historique utilisé pour entraîner ou tester un modèle.
-
+* *Pourquoi les snapshots évitent le Data Leakage ?* Si nous entraînions un modèle pour prédire le churn de Janvier en utilisant la table live (qui est mise à jour en continu), nous risquerions d'utiliser des données futures (ex: un pic de consommation ou un ticket support datant de Février) pour expliquer un événement passé. Le snapshot fige la vision exacte qu'on avait du client au 31 janvier, garantissant qu'aucune information du futur ne "fuite" dans les données d'entraînement.
 ### Réflexion personnelle
 
 Le point le plus difficile dans la mise en place de l’ingestion a été de s’assurer que les données étaient correctement typées et cohérentes avant insertion, notamment pour les colonnes booléennes et numériques. J’ai rencontré plusieurs erreurs liées aux chemins de fichiers Docker et aux services non démarrés, que j’ai corrigées en vérifiant que les conteneurs Prefect et Postgres étaient bien en fonctionnement avant d’exécuter les flows.
