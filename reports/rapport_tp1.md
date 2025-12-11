@@ -36,6 +36,8 @@ Ensuite, la commande `docker ps -a` affiche tous les conteneurs présents sur la
 ```bash
 docker run alpine echo "Bonjour depuis un conteneur Alpine"
 ```
+
+
 ![alpine](Picture3.png)
 
 
@@ -53,6 +55,7 @@ Le conteneur passe immédiatement au statut *Exited* une fois la commande `echo`
 ```bash
 docker run -it alpine sh
 ```
+
 
 ![alpine](Picture5.png)                                                                  
 
@@ -100,7 +103,9 @@ CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 
 **Construction de l'image :**
 
+
 ![simple](Picture6.png)
+
 
 ## Exercice 4 : Exécution et Ports
 
@@ -109,21 +114,33 @@ CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```bash
 docker run -p 8000:8000 simple-api
 ```
+
+
 ![simple](Picture7.png)
+
+
 
 
 **Tests d'accès :**
 
 1.  **Accès racine (`/`) :**
+
 ![simple](Picture8.png)
+
+
     Obtention d'une erreur `404 Not Found` car aucune route n'a été définie pour la racine `/` dans `app.py`.
 
 2.  **Accès endpoint (`/health`) :**
+
 ![simple](Picture9.png)
+
     Le JSON `{"status": "ok"}` est retourné correctement.
 
 **Explication du mappage de port :**
+
 ![simple](Picture10.png)
+
+
 L'option `-p 8000:8000` connecte le port 8000 de la machine hôte au port 8000 du conteneur. Sans cela, l'API serait isolée à l'intérieur du réseau Docker et inaccessible depuis le navigateur.
 
 **Analyse du conteneur (`docker ps`) :**
@@ -133,8 +150,14 @@ L'option `-p 8000:8000` connecte le port 8000 de la machine hôte au port 8000 d
   * **Port mappé :** `0.0.0.0:8000->8000/tcp`
 
 **Différence entre les commandes :**
+
+
 ![simple](Picture11.png)
+
+
 ![simple](Picture30.png)
+
+  
   * `docker ps` : Affiche uniquement les conteneurs **actifs** (en cours d'exécution).
   * `docker ps -a` : Affiche **tous** les conteneurs (actifs et arrêtés/terminés).
 
@@ -143,8 +166,12 @@ L'option `-p 8000:8000` connecte le port 8000 de la machine hôte au port 8000 d
 ## Exercice 5 : Docker Compose
 
 **Arborescence du projet :**
+
+
 ![simple](Picture12.png)
 ![simple](Picture13.png)
+
+
 **Fichier `docker-compose.yml` :**
 
 ```yaml
@@ -171,11 +198,19 @@ services:
 **Lancement de la stack :**
 
 **Test de connexion :**
+
+
 ![simple](Picture14.png)
 ![simple](Picture15.png)
 ![simple](Picture16.png)
+
+
 **Gestion du cycle de vie :**
+
+
 ![simple](Picture17.png)
+
+
   * `docker stop <id>` : Arrête un conteneur spécifique tout en conservant son état et ses données temporaires. Il peut être relancé avec `docker start`.
   * `docker compose down` : Arrête et **supprime** tous les conteneurs et réseaux créés par le fichier Compose. C'est une méthode de nettoyage complète de l'exécution.
 
@@ -187,13 +222,21 @@ services:
 ```bash
 docker compose exec db psql -U demo -d demo
 ```
+
+
 ![simple](Picture18.png)
 ![simple](Picture19.png)
+
+  
   * `exec` : Exécute une commande dans un conteneur actif.
   * `db` : Nom du service défini dans le docker-compose.
   * `-U` : Utilisateur PostgreSQL.
   * `-d` : Base de données cible.
+
+    
 ![simple](Picture20.png)
+
+
 
 **Informations de connexion :**
 Pour qu'un autre service (comme l'API) se connecte à la base de données, l'URI de connexion serait :
@@ -207,9 +250,13 @@ La commande `docker compose down -v` est cruciale :
   * Avec `-v` : Les volumes sont supprimés, réinitialisant totalement la base de données à zéro.
 
 **Redémarrage et Debugging :**
+
+
 ![simple](Picture21.png)
 ![simple](Picture22.png)
 ![simple](Picture23.png)
+
+
 Le redémarrage (`docker compose restart api`) est utile pour :
 
 1.  Appliquer des changements de configuration.
@@ -218,13 +265,20 @@ Le redémarrage (`docker compose restart api`) est utile pour :
 
 **Analyse des logs :**
 
+
 ![simple](Picture24.png)
 ![simple](Picture25.png)
 ![simple](Picture26.png)
+
+
 En cas d'erreur (ex: faute de frappe dans le code), `docker compose logs -f api` est l'outil principal pour diagnostiquer le problème (ici une `NameError`).
 
 **Nettoyage final (Prune) :**
+
+
 ![simple](Picture27.png)
+
+
 L'utilisation de `docker container prune` et `docker image prune` permet de supprimer les ressources inutilisées (conteneurs arrêtés, images sans tag). Cela libère de l'espace disque et évite les conflits potentiels lors de futurs déploiements.
 
 
