@@ -82,11 +82,6 @@ Ces bornes (>= 0) sont critiques pour le Machine Learning. Si un modèle recevai
 ![simple](tp2.8.png)
 
 
-Voici un commentaire rédigé en **style académique**, clair et approprié pour un rapport technique :
-
----
-
-### **Analyse du résultat des snapshots mensuels**
 
 L’exécution des requêtes suivantes donnent:
 
