@@ -11,8 +11,11 @@
 ```bash
 docker run hello-world
 ```
+
 ![hello-world](Picture1.png)
 ![hello-world2](Picture2.png)
+
+
 **Observation :**
 Le message de succès confirme que l'installation est fonctionnelle.
 Ensuite, la commande `docker ps -a` affiche tous les conteneurs présents sur la machine, y compris ceux qui sont arrêtés (statut *Exited*), ce qui permet de voir l'historique des exécutions.
@@ -34,9 +37,13 @@ Ensuite, la commande `docker ps -a` affiche tous les conteneurs présents sur la
 docker run alpine echo "Bonjour depuis un conteneur Alpine"
 ```
 ![alpine](Picture3.png)
+
+
 **Analyse :**
 Docker a d'abord téléchargé l’image `alpine` (pull) depuis le Docker Hub car elle n'était pas présente localement. Ensuite, il a créé un conteneur, exécuté la commande `echo`, puis affiché le résultat.
+
 ![alpine](Picture4.png)
+
 Le conteneur passe immédiatement au statut *Exited* une fois la commande `echo` terminée, car le conteneur n'a pas de processus persistant pour le maintenir en vie.
 
 ### Isolation
@@ -46,9 +53,9 @@ Le conteneur passe immédiatement au statut *Exited* une fois la commande `echo`
 ```bash
 docker run -it alpine sh
 ```
+
 ![alpine](Picture5.png)                                                                  
 
-&nbsp;
 
 
 
