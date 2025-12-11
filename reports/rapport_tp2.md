@@ -85,13 +85,22 @@ Ces bornes (>= 0) sont critiques pour le Machine Learning. Si un modèle recevai
 ![simple](tp2.8.png)
 
 
-**Commentaire :**
+Voici un commentaire rédigé en **style académique**, clair et approprié pour un rapport technique :
 
-Nous observons que le nombre de lignes est strictement identique (**7043**) pour les deux dates de snapshot:
+---
 
-1.  **Stratégie d'Upsert :** Notre pipeline utilise une logique `INSERT ... ON CONFLICT DO UPDATE`. Lors de l'ingestion du mois 001, le système a détecté que les `user_id` existaient déjà dans la base. Il a donc **mis à jour** les données existantes dans les tables principales au lieu de créer de nouvelles lignes.
-2.  **Cohorte Fixe :** Le jeu de données suit une cohorte fixe d'utilisateurs. Même si un client a "churné" (résilié) en février, sa ligne est conservée pour l'historique et mise à jour. Aucun nouvel utilisateur n'est apparu et aucun n'a été supprimé.
-3.  **Mécanisme du Snapshot :** La fonction `snapshot_month` a capturé l'état des tables principales à deux moments différents. Le snapshot du 29 février contient donc les mêmes 7043 utilisateurs que celui de janvier, mais avec leurs caractéristiques (consommation, facturation) mises à jour pour le mois de février.
+### **Analyse du résultat des snapshots mensuels**
+
+L’exécution des requêtes suivantes donnent:
+
+* **0 enregistrement** pour la date du *31 janvier 2024* ;
+* **7043 enregistrements** pour la date du *29 février 2024*.
+
+Ces résultats indiquent que le snapshot correspondant au mois de janvier n’a pas été matérialisé, c’est-à-dire qu’aucune ligne n’a été insérée dans la table `subscriptions_profile_snapshots` pour la valeur `as_of = '2024-01-31'`. Cette situation peut s’expliquer par l’absence d’exécution du flow d’ingestion pour ce mois.
+
+En revanche, le snapshot du mois de février affiche **7043 lignes**, ce qui signifie que la procédure de snapshot a correctement capturé l’état de la table `subscriptions` au moment de l’exécution du flow avec `AS_OF=2024-02-29`. Une ligne est ainsi stockée par utilisateur, associée à une date de référence (`as_of`), conformément au mécanisme de suivi temporel mis en place.
+
+
 ## Synthèse du TP2
 
 ### Schéma du pipeline d’ingestion (ASCII)
