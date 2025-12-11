@@ -45,9 +45,6 @@ La fonction `upsert_csv` charge un fichier CSV dans une table Postgres en suivan
 
 Après l'ingestion de month_000, nous avons 7043 clients dans la base.
 
-Voici un texte que vous pouvez ajouter à votre rapport :
-
-
 
 ## Question 4.a:
 
