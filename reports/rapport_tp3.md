@@ -10,7 +10,7 @@ docker compose up -d --build
 ```
 
 
-### **Rôle du conteneur `feast` **
+### **Rôle du conteneur `feast`**
 
 Le conteneur **feast** contient l’environnement d’exécution du *Feature Store*.
 La configuration du Feature Store (feature_store.yaml, registres, sources, definitions) se trouve dans le conteneur sous le dossier `/repo`, monté depuis `./services/feast_repo/repo`.
