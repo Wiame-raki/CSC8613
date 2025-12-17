@@ -1,9 +1,9 @@
 services:
   postgres:
     image: postgres:16
-    env_file: .env
+    env_file: .env          # Utiliser les variables définies dans .env
     volumes:
-      - ./db/init:/docker-entrypoint-initdb.d
+      - ./db/init:/docker-entrypoint-initdb.d   # Monter les scripts d'init
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
@@ -12,7 +12,7 @@ services:
     build: ./services/prefect
     depends_on:
       - postgres
-    env_file: .env
+    env_file: .env          # Réutiliser les mêmes identifiants Postgres
     environment:
       PREFECT_API_URL: http://0.0.0.0:4200/api
       PREFECT_UI_URL: http://0.0.0.0:4200
@@ -24,11 +24,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - ./services/prefect:/opt/prefect/flows
-      - ./data:/data
-      - ./services/feast_repo/repo:/repo
+      - ./data:/data     # Rendre les CSV accessibles au conteneur Prefect
+      - ./services/feast_repo/repo:/repo  
+      - ./mlartifacts:/mlartifacts
 
   feast:
-    build: ./services/feast_repo
+    build: ./services/feast_repo         # TODO: donnez le chemin de build
     depends_on:
       - postgres
     environment:
@@ -47,6 +48,15 @@ services:
     volumes:
       - ./api:/app
       - ./services/feast_repo/repo:/repo
+      - ./mlartifacts:/mlartifacts
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.16.0
+    command: mlflow server --backend-store-uri sqlite:///mlartifacts/mlflow.db --default-artifact-root mlflow-artifacts:/ --host 0.0.0.0 --port 5000 --serve-artifacts --artifacts-destination /mlartifacts/artifacts
+    volumes:
+      - ./mlartifacts:/mlartifacts
+    ports: ["5000:5000"]
 
 volumes:
   pgdata:
+  mlartifacts:
