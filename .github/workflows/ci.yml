@@ -1,5 +1,4 @@
 name: CI (Unit + Compose Smoke)
-
 on:
   push:
     branches: [ main ]
