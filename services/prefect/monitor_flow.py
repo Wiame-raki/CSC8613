@@ -11,6 +11,7 @@ from evidently.presets import DataDriftPreset, DataSummaryPreset
 from evidently.metrics import ValueDrift
 from evidently import Dataset
 from evidently import DataDefinition
+from train_and_compare_flow import train_and_compare_flow
 
 # ----------------------------
 # Configuration
@@ -230,15 +231,20 @@ def run_evidently(reference_df: pd.DataFrame, current_df: pd.DataFrame, as_of_re
     }
 
 @task
-def decide_action(as_of_ref: str, as_of_cur: str, drift_share: float, target_drift: float, threshold: float = 0.3) -> str:
-    """
-    Décision simple : si drift_share dépasse threshold, on simule un déclenchement de retrain.
-    """
+def decide_action(
+    as_of_ref: str,
+    as_of_cur: str,
+    drift_share: float,
+    target_drift: float,
+    threshold: float = 0.02,
+) -> str:
     if drift_share >= threshold:
+        decision = train_and_compare_flow(as_of=as_of_cur)
         return (
-            f"RETRAINING_TRIGGERED (SIMULÉ) drift_share={drift_share:.2f} >= {threshold:.2f} "
-            f"(target_drift={target_drift if target_drift == target_drift else 'NaN'})"
+            f"RETRAINING_TRIGGERED drift_share={drift_share:.2f} >= {threshold:.2f} "
+            f"-> {decision}"
         )
+
     return (
         f"NO_ACTION drift_share={drift_share:.2f} < {threshold:.2f} "
         f"(target_drift={target_drift if target_drift == target_drift else 'NaN'})"
@@ -251,7 +257,7 @@ def decide_action(as_of_ref: str, as_of_cur: str, drift_share: float, target_dri
 def monitor_month_flow(
     as_of_ref: str = AS_OF_REF_DEFAULT,
     as_of_cur: str = AS_OF_CUR_DEFAULT,
-    threshold: float = 0.3,
+    threshold: float = 0.02,
 ):
     ref_df = build_dataset(as_of_ref)
     cur_df = build_dataset(as_of_cur)
@@ -268,4 +274,4 @@ def monitor_month_flow(
     )
 
 if __name__ == "__main__":
-    monitor_month_flow()
+    monitor_month_flow(threshold=0.0)
