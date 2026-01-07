@@ -16,15 +16,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install test deps
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
           pip install pytest
 
       - name: Run unit tests
         run: |
-          pytest -v tests/unit
+          pytest -q
 
   integration:
     runs-on: ubuntu-latest
@@ -44,23 +42,16 @@ jobs:
 
       - name: Wait for API health
         run: |
-          echo "Waiting for API to be healthy..."
-          for i in $(seq 1 60); do
-            if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
-              echo "✓ API is healthy on attempt $i"
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/health >/dev/null; then
+              echo "API is healthy"
               exit 0
             fi
-            echo "Attempt $i/60: API not ready yet, waiting..."
             sleep 2
           done
-          echo "✗ API healthcheck failed after 120 seconds"
+          echo "API healthcheck failed"
           docker compose logs --no-color > compose-logs.txt || true
           exit 1
-
-      - name: Run smoke tests
-        run: |
-          echo "✓ Smoke test passed: API is responding to health checks"
-          echo "✓ Core stack (postgres, feast, mlflow, api) is running successfully"
 
       - name: Dump logs (always)
         if: always()
@@ -78,3 +69,4 @@ jobs:
         if: always()
         run: |
           docker compose down -v
+    
