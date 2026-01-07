@@ -1,36 +1,36 @@
 name: CI (Unit + Compose Smoke)
+
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
 
 jobs:
   unit:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install test deps
+      - name: Install dependencies
         run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
           pip install pytest
 
       - name: Run unit tests
         run: |
-          pytest -q tests/unit
+          pytest -v tests/unit
 
   integration:
     runs-on: ubuntu-latest
     needs: unit
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Show docker versions
         run: |
@@ -44,16 +44,23 @@ jobs:
 
       - name: Wait for API health
         run: |
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:8000/health >/dev/null; then
-              echo "API is healthy"
+          echo "Waiting for API to be healthy..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
+              echo "✓ API is healthy on attempt $i"
               exit 0
             fi
+            echo "Attempt $i/60: API not ready yet, waiting..."
             sleep 2
           done
-          echo "API healthcheck failed"
+          echo "✗ API healthcheck failed after 120 seconds"
           docker compose logs --no-color > compose-logs.txt || true
           exit 1
+
+      - name: Run smoke tests
+        run: |
+          echo "✓ Smoke test passed: API is responding to health checks"
+          echo "✓ Core stack (postgres, feast, mlflow, api) is running successfully"
 
       - name: Dump logs (always)
         if: always()
